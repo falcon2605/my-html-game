@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark" style="color-scheme: dark;">
+
+<head>
+    <title>Legend of the Number Knight</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <!-- โหลด Firebase SDK แบบ Compat -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --bg: #f1e9d6;
+            --card: #fffaf0;
+            --ink: #2b2140;
+            --mut: #6b5f86;
+            --gold: #b7791f;
+            --ok: #15803d;
+            --bad: #dc2626;
+            --line: #d8c9a6;
+            --btn: #5b21b6;
+            --btnink: #fff;
+            --bar: #e6dcc3
+        }
+
+        @media (prefers-color-scheme:dark) {
+            :root:not([data-theme="light"]) {
+                --bg: #0f0c1d;
+                --card: #1b1632;
+                --ink: #f3eefc;
+                --mut: #a99fc7;
+                --gold: #ffc94d;
+                --ok: #4ade80;
+                --bad: #f87171;
+                --line: #3b3263;
+                --btn: #ffc94d;
+                --btnink: #1b1232;
+                --bar: #2a2350
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #0f0c1d;
+            --card: #1b1632;
+            --ink: #f3eefc;
+            --mut: #a99fc7;
+            --gold: #ffc94d;
+            --ok: #4ade80;
+            --bad: #f87171;
+            --line: #3b3263;
+            --btn: #ffc94d;
+            --btnink: #1b1232;
+            --bar: #2a2350
+        }
+
+        :root {
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px)
+        }
+
+        html {
+            scroll-padding-top: env(safe-area-inset-top, 0px)
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: inherit
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: 'Kanit', 'Noto Sans Thai', 'Sarabun', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 14px
+        }
+
+        #wrap {
+            width: 100%;
+            max-width: 560px
+        }
+
+        .card {
+            background: var(--card);
+            border: 2px solid var(--line);
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: .2em 0;
+            color: var(--gold);
+            line-height: 1.15
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            margin: .3em 0
+        }
+
+        h3 {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--mut);
+            margin: 0 0 .6em
+        }
+
+        p {
+            line-height: 1.6;
+            margin: .5em 0
+        }
+
+        .muted {
+            color: var(--mut);
+            font-size: .9rem
+        }
+
+        .big {
+            font-size: 4rem;
+            line-height: 1
+        }
+
+        button {
+            font: inherit;
+            font-weight: 600;
+            font-size: 1.1rem;
+            background: var(--btn);
+            color: var(--btnink);
+            border: 0;
+            border-radius: 10px;
+            padding: .65em 1.6em;
+            cursor: pointer
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        a:focus-visible {
+            outline: 3px solid var(--gold);
+            outline-offset: 2px
+        }
+
+        ul.rules {
+            text-align: left;
+            font-size: .92rem;
+            color: var(--mut);
+            line-height: 1.7;
+            padding-left: 1.2em;
+            margin: .6em 0 1em
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem
+        }
+
+        .hud b {
+            font-weight: 800
+        }
+
+        .bar {
+            position: relative;
+            height: 22px;
+            background: var(--bar);
+            border-radius: 11px;
+            overflow: hidden;
+            margin: 10px 0
+        }
+
+        .bar i {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 100%;
+            background: var(--ok);
+            transition: width .12s linear, background .3s
+        }
+
+        .bar span {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            font-size: .8rem;
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 1px 2px #0008
+        }
+
+        #track {
+            position: relative;
+            height: 64px;
+            margin: 6px 0;
+            border-bottom: 3px dashed var(--line)
+        }
+
+        #kn,
+        #tg {
+            position: absolute;
+            bottom: 4px;
+            font-size: 2.6rem;
+            line-height: 1
+        }
+
+        #kn {
+            left: 0;
+            transition: left .5s ease
+        }
+
+        #tg {
+            right: 0
+        }
+
+        .shake {
+            animation: sh .35s
+        }
+
+        @keyframes sh {
+            20% {
+                transform: translateX(-8px)
+            }
+
+            50% {
+                transform: translateX(8px)
+            }
+
+            80% {
+                transform: translateX(-4px)
+            }
+        }
+
+        .hit {
+            animation: hit .35s
+        }
+
+        @keyframes hit {
+            50% {
+                transform: scale(1.25) rotate(-8deg)
+            }
+        }
+
+        #pl {
+            font-size: .85rem;
+            color: var(--mut);
+            text-align: left
+        }
+
+        #pbar {
+            height: 10px;
+            background: var(--bar);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 4px 0 10px
+        }
+
+        #pbar i {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: var(--gold);
+            transition: width .4s
+        }
+
+        #q {
+            font-size: clamp(2rem, 9vw, 3rem);
+            font-weight: 800;
+            margin: .35em 0;
+            letter-spacing: .02em
+        }
+
+        .ans {
+            display: flex;
+            gap: 8px;
+            justify-content: center
+        }
+
+        #in {
+            font: inherit;
+            font-size: 1.6rem;
+            font-weight: 600;
+            width: 8ch;
+            flex: 1;
+            max-width: 11ch;
+            text-align: center;
+            border: 2px solid var(--line);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--ink);
+            padding: .3em
+        }
+
+        #nm {
+            font: inherit;
+            font-size: 1.2rem;
+            width: 100%;
+            max-width: 22ch;
+            text-align: center;
+            border: 2px solid var(--line);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--ink);
+            padding: .45em
+        }
+
+        #fb {
+            min-height: 3.4em;
+            margin-top: 10px;
+            font-weight: 600;
+            line-height: 1.5
+        }
+
+        .ok {
+            color: var(--ok)
+        }
+
+        .bad {
+            color: var(--bad)
+        }
+
+        .ranks {
+            display: grid;
+            gap: 4px;
+            text-align: left;
+            margin: .8em 0;
+            font-size: .95rem
+        }
+
+        .ranks div {
+            padding: 5px 10px;
+            border-radius: 8px;
+            color: var(--mut)
+        }
+
+        .ranks .me {
+            background: var(--gold);
+            color: #1b1232;
+            font-weight: 800
+        }
+
+        .btnrow {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: .8em
+        }
+
+        .btn2 {
+            background: transparent;
+            color: var(--btn);
+            border: 2px solid var(--btn)
+        }
+
+        a {
+            color: var(--btn)
+        }
+
+        .lbwrap {
+            display: grid;
+            gap: 6px;
+            margin: .8em 0;
+            text-align: left
+        }
+
+        .lbrow {
+            display: grid;
+            grid-template-columns: 2em 1fr 3.4em 4em;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            background: var(--bar);
+            font-size: .92rem
+        }
+
+        .lbrow.me2 {
+            background: var(--gold);
+            color: #1b1232;
+            font-weight: 800
+        }
+
+        .lbn {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .vart {
+            max-width: 340px;
+            margin: 4px auto 10px
+        }
+
+        .vart svg {
+            width: 100%;
+            height: auto;
+            display: block
+        }
+
+        @media (prefers-reduced-motion:reduce) {
+            * {
+                animation: none !important;
+                transition: none !important
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrap">
+        <section id="menu" class="card">
+            <!-- Content will be injected by JS -->
+        </section>
+
+        <section id="game" class="card shake" hidden="">
+            <div class="hud">
+                <div id="lvl">ด่าน 1/5 🏕️</div>
+                <div id="hearts">❤️🖤🖤</div>
+                <div>⭐ <b id="score">0</b></div>
+            </div>
+            <div class="bar"><i id="tbar" style="width: 0%; background: var(--bad);"></i><span id="tnum">⏱️ 0 วิ</span>
+            </div>
+            <div id="track"><span id="kn" style="left: calc(0%);">🤺</span><span id="tg" class="hit">🌲</span></div>
+            <div id="pl">ความคืบหน้า 0/6</div>
+            <div id="pbar"><i id="pfill" style="width: 0%; background: var(--gold);"></i></div>
+            <div id="q"></div>
+            <div class="ans"><input id="in" type="text" inputmode="numeric" autocomplete="off" aria-label="คำตอบ"
+                    placeholder="?"><button id="go">ตอบ</button></div>
+            <div id="fb" aria-live="polite" class="bad"></div>
+        </section>
+    </div>
+
+    <script>
+        // ---------------------------------------------------------
+        // 1. ตั้งค่า Firebase
+        // ---------------------------------------------------------
+        const firebaseConfig = {
+            databaseURL: "https://number-knight-game-bba2d-default-rtdb.firebaseio.com",
+            apiKey: "AIzaSyBBu9KhdHqoXZMotNxSgXY8gTL1ba_O6os",
+            authDomain: "number-knight-game-bba2d.firebaseapp.com",
+            projectId: "number-knight-game-bba2d",
+            storageBucket: "number-knight-game-bba2d.firebasestorage.app",
+            messagingSenderId: "910244757306",
+            appId: "1:910244757306:web:c631d7a0ad376533be5a03",
+            measurementId: "G-ZZ9P9QPC4Y"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // ---------------------------------------------------------
+        // 2. ระบบเกมคณิตศาสตร์
+        // ---------------------------------------------------------
+        const $ = id => document.getElementById(id);
+        const r = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
+
+        const LV = [
+            { n: 'Forest of Numbers', th: 'ป่าตัวเลข', ic: '🏕️', tg: '🌲', t: 60, q: 6, s: 'ป่าทึบขวางทางสู่ปราสาทมืด แก้โจทย์บวกและลบเพื่อเปิดทางเดินหน้า' },
+            { n: 'The Locked Gate', th: 'ประตูแห่งตัวเลข', ic: '🚪', tg: '🔒', t: 50, q: 6, s: 'ประตูใหญ่ถูกล็อกด้วยรหัสมนตร์ ใช้การคูณและหารเพื่อไขมัน' },
+            { n: 'Battle of Numbers', th: 'การต่อสู้แห่งตัวเลข', ic: '⚔️', tg: '👹', t: 45, q: 8, s: 'อสูรของจอมมารขวางทางอยู่! ตอบถูกเพื่อโจมตี ตอบถูกติดกัน 3 ข้อขึ้นไปจะเป็น Combo Attack ดาเมจสองเท่า' },
+            { n: 'Castle of Calculation', th: 'ปราสาทแห่งการคำนวณ', ic: '🏰', tg: '🏰', t: 40, q: 6, s: 'โจทย์ผสมหลายเครื่องหมาย จำไว้ว่าต้อง คูณ/หาร ก่อน บวก/ลบ และวงเล็บมาก่อนเสมอ' },
+            { n: 'Rescue the Princess', th: 'ภารกิจช่วยเจ้าหญิง', ic: '👑', tg: '👸', t: 60, q: 8, s: 'ด่านสุดท้าย! โจทย์สุ่มทุกแบบ ตอบให้ครบก่อนเวลาหมดเพื่อช่วยเจ้าหญิง' }
+        ];
+
+        const RANKS = [[0, 'นักเรียนฝึกหัด', '🎓'], [1000, 'Number Knight', '⚔️'], [3000, 'Elite Number Knight', '🛡️'], [5000, 'Master of Numbers', '🔮'], [7000, 'Legendary Number Knight', '👑']];
+        const rankOf = s => RANKS.filter(x => s >= x[0]).pop();
+
+        const gens = [
+            () => { if (Math.random() < .5) { const a = r(10, 60), b = r(10, 40); return [`${a} + ${b}`, a + b] } const a = r(30, 99), b = r(10, a - 5); return [`${a} − ${b}`, a - b] },
+            () => { if (Math.random() < .5) { const a = r(3, 12), b = r(3, 12); return [`${a} × ${b}`, a * b] } const b = r(2, 12), c = r(2, 12); return [`${b * c} ÷ ${b}`, c] },
+            () => { const t = r(0, 2); if (t == 0) { const a = r(40, 99), b = r(20, 99); return [`${a} + ${b}`, a + b] } if (t == 1) { const a = r(60, 150), b = r(15, a - 10); return [`${a} − ${b}`, a - b] } const a = r(6, 15), b = r(3, 9); return [`${a} × ${b}`, a * b] },
+            () => {
+                const t = r(0, 3);
+                if (t == 0) { const a = r(2, 20), b = r(2, 9), c = r(2, 9); return [`${a} + ${b} × ${c}`, a + b * c] }
+                if (t == 1) { const a = r(2, 9), b = r(2, 9), c = r(1, a * b - 1); return [`${a} × ${b} − ${c}`, a * b - c] }
+                if (t == 2) { const a = r(2, 12), b = r(2, 12), c = r(2, 6); return [`(${a} + ${b}) × ${c}`, (a + b) * c] }
+                const c = r(2, 6), b = c * r(2, 9), a = r(b / c + 1, 40); return [`${a} − ${b} ÷ ${c}`, a - b / c]
+            },
+            () => gens[r(0, 3)]()
+        ];
+
+        const G = { name: null, cloudBest: 0, cloudLevel: 0, screen: 'boot' };
+
+        function loadProfile() {
+            try {
+                const cur = JSON.parse(localStorage.getItem('nk-profile') || '{}');
+                if (cur.name) { G.name = cur.name; G.cloudBest = cur.bestScore || 0; G.cloudLevel = cur.bestLevel || 0 }
+            } catch (e) { }
+        }
+
+        // เซฟคะแนนลง Firebase
+        function persistScore(score, lvl) {
+            try {
+                const prof = JSON.parse(localStorage.getItem('nk-profile') || '{}');
+                prof.name = G.name; prof.bestScore = Math.max(prof.bestScore || 0, score); prof.bestLevel = Math.max(prof.bestLevel || 0, lvl);
+                localStorage.setItem('nk-profile', JSON.stringify(prof));
+                G.cloudBest = prof.bestScore; G.cloudLevel = prof.bestLevel;
+            } catch (e) { }
+
+            if (score > 0) {
+                db.ref('scores').push({
+                    name: G.name,
+                    score: score,
+                    level: lvl,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
+        }
+
+        function ensureLogin(cb) {
+            if (G.name) { cb(); return }
+            G.screen = 'login';
+            menu(`<div class="big">🔑</div><h2>ตั้งชื่อนักรบ</h2><h3>ชื่อนี้จะปรากฏบนตารางอันดับสาธารณะ</h3>
+  <div class="ans"><input id="nm" maxlength="16" placeholder="ชื่ออัศวินของคุณ"></div>
+  <button id="lgo" style="margin-top:15px;">เข้าสู่เกม</button>`);
+            $('nm').focus();
+            const go = () => { const v = $('nm').value.trim(); if (!v) return; G.name = v.slice(0, 16); cb() }; $('lgo').onclick = go;
+            $('nm').addEventListener('keydown', e => { if (e.key === 'Enter') go() });
+        }
+
+        // โหลดคะแนนจาก Firebase (และปุ่มลบสำหรับ GM)
+        function leaderboard() {
+            G.screen = 'lb';
+
+            // ตรวจสอบสิทธิ์ GM
+            const isGM = (G.name === 'GM_Samaae');
+            const gmBtn = isGM ? `<button id="gm-clear" class="btn2" style="border-color: var(--bad); color: var(--bad);">🗑️ ล้างตาราง (GM)</button>` : '';
+
+            menu(`<div class="big">🏆</div><h2>ตารางอันดับนักรบ</h2><h3 id="lb-status">กำลังโหลดข้อมูล...</h3>
+  <div class="lbwrap" id="lb-content"></div>
+  <div class="btnrow"><button id="rf" class="btn2">🔄 รีเฟรช</button>${gmBtn}<button id="bk">กลับ</button></div>`);
+
+            $('bk').onclick = title;
+            $('rf').onclick = leaderboard;
+
+            // ฟังก์ชันสำหรับ GM
+            if (isGM) {
+                $('gm-clear').onclick = () => {
+                    if (confirm('ยืนยันการล้างข้อมูลตารางอันดับทั้งหมด? (ข้อมูลจะถูกลบถาวร ผู้เล่นท่านอื่นจะเห็นตารางว่างเปล่า)')) {
+                        db.ref('scores').remove().then(() => {
+                            alert('ล้างข้อมูลกระดานผู้นำเรียบร้อยแล้ว!');
+                            leaderboard(); // รีเฟรชตาราง
+                        }).catch(e => {
+                            alert('เกิดข้อผิดพลาดในการลบข้อมูล: ' + e.message);
+                        });
+                    }
+                };
+            }
+
+            db.ref('scores').orderByChild('score').limitToLast(10).once('value', (snapshot) => {
+                let scoresArray = [];
+                snapshot.forEach((child) => {
+                    scoresArray.push(child.val());
+                });
+                scoresArray.reverse();
+
+                const medal = i => ['🥇', '🥈', '🥉'][i] || (i + 1);
+                const row = (e, i) => `<div class="lbrow${e.name === G.name ? ' me2' : ''}"><span>${medal(i)}</span><span class="lbn">${esc(e.name || 'นักรบนิรนาม')}</span><span>Lv.${e.level || 1}</span><span><b>${e.score || 0}</b></span></div>`;
+
+                let list = scoresArray.length ? scoresArray.map(row).join('') : '<p class="muted">ยังไม่มีข้อมูลในตารางอันดับ ลองเล่นให้จบด่านแรกดูสิ!</p>';
+
+                if ($('lb-content')) $('lb-content').innerHTML = list;
+                if ($('lb-status')) $('lb-status').innerHTML = 'สาธารณะ · อัปเดตล่าสุดเรียบร้อย';
+            });
+        }
+
+        function victorySVG() {
+            return `<div class="vart"><svg viewBox="0 0 400 220" role="img">
+  <rect width="400" height="220" fill="var(--bg)"/>
+  <circle cx="335" cy="42" r="24" fill="var(--gold)" opacity=".85"/>
+  <g fill="var(--line)">
+   <rect x="40" y="92" width="320" height="88"/>
+   <rect x="55" y="58" width="30" height="42"/>
+   <rect x="118" y="42" width="34" height="58"/>
+   <rect x="250" y="58" width="30" height="42"/>
+   <polygon points="130,42 137,26 144,42"/>
+   <polygon points="60,58 70,44 80,58"/>
+   <polygon points="255,58 265,44 275,58"/>
+   <rect x="178" y="122" width="44" height="58" fill="var(--bg)"/>
+  </g>
+  <rect x="0" y="180" width="400" height="40" fill="var(--bar)"/>
+  <g transform="translate(150,150)">
+   <rect x="10" y="-20" width="5" height="30" fill="#9ca3af"/>
+   <rect x="-12" y="-24" width="24" height="34" rx="6" fill="var(--btn)"/>
+   <rect x="-16" y="-30" width="32" height="10" rx="4" fill="var(--gold)"/>
+   <circle cx="0" cy="-38" r="14" fill="#f2c18d"/>
+  </g>
+  <text x="176" y="132" font-size="20">❤️️</text>
+  <g transform="translate(215,150)">
+   <polygon points="0,-27 20,20 -20,20" fill="#ec4899"/>
+   <circle cx="0" cy="-40" r="13" fill="#f2c18d"/>
+   <polygon points="-8,-52 0,-42 8,-52 0,-46" fill="var(--gold)"/>
+  </g>
+  <text x="200" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">👑 ภารกิจสำเร็จ 👑</text>
+  <text x="90" y="205" font-size="18">✨</text>
+  <text x="305" y="198" font-size="16">✨</text>
+  <text x="330" y="168" font-size="14">✨</text>
+  </svg></div>`;
+        }
+
+        function menu(h) { $('game').hidden = true; $('menu').hidden = false; $('menu').innerHTML = h }
+
+        function title() {
+            G.screen = 'title';
+            menu(`<div class="big">🤺</div><h1>Legend of the Number Knight</h1><h3>ตำนานอัศวินแห่งตัวเลข</h3>
+  <p>จอมมารบุกอาณาจักรแห่งตัวเลขและจับเจ้าหญิงไปขังไว้ในปราสาทแห่งความมืด มีเพียง Number Knight ที่ช่วยเธอได้ด้วยพลังแห่งการคำนวณ</p>
+  <ul class="rules"><li>5 ด่าน แต่ละด่านมีเวลาจำกัด หมดเวลา = Game Over</li><li>มี 3 ❤️ ตอบผิดเสีย 1 ดวง ตอบใหม่ได้แต่เวลายังเดิน</li><li>ตอบถูก +100 · ตอบเร็วภายใน 5 วิ +50 · ตอบผิด −20 · ตอบถูกติดกันได้ Combo Bonus</li></ul>
+  ${G.name ? `<p>ชื่อนักรบของคุณ: <b>⚔️ ${esc(G.name)}</b> · <a href="#" id="ch">เปลี่ยนชื่อ</a></p>` : '<p class="muted">ยังไม่ได้ตั้งชื่อนักรบ</p>'}
+  <div class="btnrow"><button id="st">เริ่มผจญภัย</button><button id="lb" class="btn2">🏆 ตารางอันดับ</button></div>
+  <p class="muted" style="margin-top:15px;">คะแนนสูงสุดของคุณ: ${G.cloudBest || 0}</p>`);
+            $('st').onclick = () => ensureLogin(start); $('lb').onclick = leaderboard;
+            if ($('ch')) $('ch').onclick = (e) => { e.preventDefault(); G.name = null; ensureLogin(title) };
+        }
+
+        function start() { Object.assign(G, { hp: 3, score: 0, combo: 0, lv: 0, on: false }); intro() }
+
+        function intro() {
+            G.screen = 'intro'; const L = LV[G.lv];
+            menu(`<div class="big">${L.ic}</div><h2>ด่าน ${G.lv + 1}: ${L.n}</h2><h3>${L.th}</h3><p>${L.s}</p><p class="muted">เวลา ${L.t} วินาที · โจทย์ ${L.q} ข้อ</p><button id="pl2">เริ่มด่าน</button>`);
+            $('pl2').onclick = play;
+        }
+
+        function hud() {
+            $('hearts').textContent = '❤️'.repeat(G.hp) + '🖤'.repeat(3 - G.hp);
+            $('score').textContent = G.score;
+            const p = Math.min(1, G.done / LV[G.lv].q), b = G.lv == 2;
+            $('pfill').style.width = (b ? 1 - p : p) * 100 + '%';
+            $('pfill').style.background = b ? 'var(--bad)' : 'var(--gold)';
+            $('pl').textContent = b ? `HP ศัตรู ${Math.max(0, LV[G.lv].q - G.done)}/${LV[G.lv].q}` : `ความคืบหน้า ${Math.min(G.done, LV[G.lv].q)}/${LV[G.lv].q}`;
+            $('kn').style.left = `calc(${p * 100}% - ${p * 5.8}rem)`;
+        }
+
+        function play() {
+            G.screen = 'play';
+            const L = LV[G.lv]; G.done = 0; G.on = true; G.end = Date.now() + L.t * 1000;
+            $('menu').hidden = true; $('game').hidden = false;
+            $('lvl').textContent = `ด่าน ${G.lv + 1}/5 ${L.ic}`; $('tg').textContent = L.tg; $('fb').textContent = '';
+            hud(); next();
+            clearInterval(G.tick);
+            G.tick = setInterval(() => {
+                const s = Math.max(0, (G.end - Date.now()) / 1000);
+                $('tbar').style.width = s / L.t * 100 + '%'; $('tbar').style.background = s < 10 ? 'var(--bad)' : 'var(--ok)'; $('tnum').textContent = '⏱️ ' + Math.ceil(s) + ' วิ';
+                if (s <= 0 && G.on) over('⏱️ หมดเวลา! ภารกิจล้มเหลว');
+            }, 100);
+        }
+
+        function next() { const [q, a] = gens[G.lv](); G.a = a; G.qs = Date.now(); $('q').textContent = q + ' = ?'; $('in').value = ''; $('in').focus() }
+        function fb(t, c) { $('fb').className = c; $('fb').innerHTML = t }
+        function pop(id, c) { const e = $(id); e.classList.remove(c); void e.offsetWidth; e.classList.add(c) }
+
+        function submit() {
+            if (!G.on) return; const v = $('in').value.trim(); if (v === '') return;
+            if (Number(v) === G.a) {
+                G.combo++;
+                let pts = 100, t = `⚔️ CORRECT! <b>+100</b> POINTS`;
+                if (Date.now() - G.qs < 5000) { pts += 50; t += `<br>⚡ ตอบเร็ว +50` }
+                if (G.combo >= 2) { const cb = Math.min(G.combo - 1, 5) * 25; pts += cb; t += `<br>🔥 COMBO ×${G.combo} +${cb}` }
+                let dmg = 1;
+                if (G.lv == 2 && G.combo >= 3) { dmg = 2; t += `<br>💥 COMBO ATTACK! ดาเมจ ×2` }
+                G.score += pts; G.done += dmg;
+                fb(t, 'ok'); pop('tg', 'hit'); hud();
+                if (G.done >= LV[G.lv].q) clear(); else next();
+            } else {
+                G.hp--; G.combo = 0; G.score = Math.max(0, G.score - 20);
+                fb('❌ ผิด! −20 คะแนน 💔 ลองใหม่อีกครั้ง', 'bad'); pop('game', 'shake'); hud();
+                $('in').select();
+                if (G.hp <= 0) over('💀 HP หมด! อัศวินพ่ายแพ้');
+            }
+        }
+
+        function clear() {
+            G.on = false; clearInterval(G.tick);
+            const L = LV[G.lv], left = Math.ceil(Math.max(0, (G.end - Date.now()) / 1000)), bonus = left * 2;
+            G.score += bonus; hud();
+            if (G.lv == 1) $('tg').textContent = '🔓';
+            if (G.lv == 2) $('tg').textContent = '💨';
+            setTimeout(() => {
+                if (G.lv == 4) return finish(true, '🏆 ช่วยเจ้าหญิงสำเร็จ!');
+                menu(`<div class="big">⭐</div><h2>ผ่านด่าน ${G.lv + 1}!</h2><p>โบนัสเวลา +${bonus} คะแนน</p><p>คะแนนรวม <b>${G.score}</b> · ${'❤️'.repeat(G.hp)}</p><button id="nx">ด่านต่อไป</button>`);
+                $('nx').onclick = () => { G.lv++; intro() };
+            }, 1000);
+        }
+
+        function over(m) { G.on = false; clearInterval(G.tick); finish(false, m) }
+
+        function finish(win, m) {
+            G.screen = 'finish';
+            const lvlReached = win ? 5 : (G.lv + 1);
+            const finalScore = G.score;
+            const dispBest = Math.max(G.cloudBest || 0, finalScore);
+            const me = rankOf(finalScore);
+
+            menu(`${win ? victorySVG() : `<div class="big">💀</div>`}<h2>${m}</h2>
+  <p>${win ? 'เจ้าหญิงกลับสู่อาณาจักรอย่างปลอดภัย ขอบคุณอัศวินผู้กล้า!' : 'ผ่านมาได้ ' + G.lv + ' ด่าน — ลองใหม่อีกครั้งนะ'}</p>
+  <p>คะแนน <b>${finalScore}</b> · คะแนนสูงสุด ${dispBest}</p>
+  <div class="ranks">${RANKS.map(x => `<div class="${x === me ? 'me' : ''}">${x[2]}${x[1]} <span class="muted">(${x[0]}+)</span></div>`).join('')}</div>
+  <p class="muted">กำลังอัปเดตคะแนน...</p>
+  <div class="btnrow"><button id="rt">เล่นอีกครั้ง</button><button id="lb2" class="btn2">🏆 ตารางอันดับ</button></div>`);
+
+            $('rt').onclick = start;
+            $('lb2').onclick = leaderboard;
+
+            persistScore(finalScore, lvlReached);
+        }
+
+        $('go').onclick = submit;
+        $('in').addEventListener('keydown', e => { if (e.key === 'Enter') submit() });
+
+        loadProfile();
+        title();
+    </script>
+</body>
+
+</html>
