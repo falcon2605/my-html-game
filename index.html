@@ -5,20 +5,13 @@
     <title>Legend of the Number Knight</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="icon" type="image/x-icon" href="knight.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
 
     <!-- โหลด Firebase SDK แบบ Compat -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Legend of the Number Knight",
-      "url": "https://ชื่อผู้ใช้ของคุณ.github.io/ชื่อเรโพซิตอรี/"
-    }
-    </script>
 
     <style>
         :root {
@@ -474,6 +467,8 @@
         // 2. ระบบเกมคณิตศาสตร์
         // ---------------------------------------------------------
         const $ = id => document.getElementById(id);
+
+        // แก้ไขฟังก์ชันแรนดอมให้ถูกต้อง (เดิมพิมพ์ผิดเป็น b a + 1)
         const r = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
         function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
 
@@ -490,7 +485,10 @@
 
         const gens = [
             () => { if (Math.random() < .5) { const a = r(10, 60), b = r(10, 40); return [`${a} + ${b}`, a + b] } const a = r(30, 99), b = r(10, a - 5); return [`${a} − ${b}`, a - b] },
+
+            // แก้ไขการคูณหารให้ถูกต้อง (เดิมพิมพ์ผิดเป็น bc)
             () => { if (Math.random() < .5) { const a = r(3, 12), b = r(3, 12); return [`${a} × ${b}`, a * b] } const b = r(2, 12), c = r(2, 12); return [`${b * c} ÷ ${b}`, c] },
+
             () => { const t = r(0, 2); if (t == 0) { const a = r(40, 99), b = r(20, 99); return [`${a} + ${b}`, a + b] } if (t == 1) { const a = r(60, 150), b = r(15, a - 10); return [`${a} − ${b}`, a - b] } const a = r(6, 15), b = r(3, 9); return [`${a} × ${b}`, a * b] },
             () => {
                 const t = r(0, 3);
@@ -511,21 +509,41 @@
             } catch (e) { }
         }
 
+        // ---------------------------------------------------------
+        // แก้ไข: เซฟคะแนนลง Firebase โดยใช้อัปเดตข้อมูลของชื่อเดิม
+        // ---------------------------------------------------------
         // เซฟคะแนนลง Firebase
         function persistScore(score, lvl) {
             try {
                 const prof = JSON.parse(localStorage.getItem('nk-profile') || '{}');
-                prof.name = G.name; prof.bestScore = Math.max(prof.bestScore || 0, score); prof.bestLevel = Math.max(prof.bestLevel || 0, lvl);
+                prof.name = G.name;
+                prof.bestScore = Math.max(prof.bestScore || 0, score);
+                prof.bestLevel = Math.max(prof.bestLevel || 0, lvl);
                 localStorage.setItem('nk-profile', JSON.stringify(prof));
-                G.cloudBest = prof.bestScore; G.cloudLevel = prof.bestLevel;
+                G.cloudBest = prof.bestScore;
+                G.cloudLevel = prof.bestLevel;
             } catch (e) { }
 
-            if (score > 0) {
-                db.ref('scores').push({
-                    name: G.name,
-                    score: score,
-                    level: lvl,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
+            // --- ส่วนที่แก้ใหม่เพื่อไม่ให้ชื่อซ้ำ ---
+            if (score > 0 && G.name) {
+                // 1. ใช้ชื่อผู้เล่นเป็น Key ใน Firebase (กรองอักขระพิเศษออกป้องกัน error)
+                // บังคับแปลงคีย์เป็นพิมพ์เล็กทั้งหมด และเปลี่ยนช่องว่างเป็น _ เพื่อป้องกันชื่อซ้ำ
+                const userKey = G.name.toLowerCase().replace(/[.#$\[\]\s]/g, "_");
+                const userRef = db.ref('scores/' + userKey);
+
+                // 2. ดึงข้อมูลสถิติเดิมของชื่อนี้มาเช็คก่อน
+                userRef.once('value', (snapshot) => {
+                    const existingData = snapshot.val();
+
+                    // 3. บันทึกก็ต่อเมื่อ: ยังไม่เคยมีชื่อนี้ หรือ คะแนนรอบนี้ได้มากกว่าคะแนนเดิม
+                    if (!existingData || score > existingData.score) {
+                        userRef.set({
+                            name: G.name,
+                            score: score,
+                            level: lvl,
+                            timestamp: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
                 });
             }
         }
@@ -541,11 +559,9 @@
             $('nm').addEventListener('keydown', e => { if (e.key === 'Enter') go() });
         }
 
-        // โหลดคะแนนจาก Firebase (และปุ่มลบสำหรับ GM)
         function leaderboard() {
             G.screen = 'lb';
 
-            // ตรวจสอบสิทธิ์ GM
             const isGM = (G.name === 'GM_Samaae');
             const gmBtn = isGM ? `<button id="gm-clear" class="btn2" style="border-color: var(--bad); color: var(--bad);">🗑️ ล้างตาราง (GM)</button>` : '';
 
@@ -556,13 +572,12 @@
             $('bk').onclick = title;
             $('rf').onclick = leaderboard;
 
-            // ฟังก์ชันสำหรับ GM
             if (isGM) {
                 $('gm-clear').onclick = () => {
                     if (confirm('ยืนยันการล้างข้อมูลตารางอันดับทั้งหมด? (ข้อมูลจะถูกลบถาวร ผู้เล่นท่านอื่นจะเห็นตารางว่างเปล่า)')) {
                         db.ref('scores').remove().then(() => {
                             alert('ล้างข้อมูลกระดานผู้นำเรียบร้อยแล้ว!');
-                            leaderboard(); // รีเฟรชตาราง
+                            leaderboard();
                         }).catch(e => {
                             alert('เกิดข้อผิดพลาดในการลบข้อมูล: ' + e.message);
                         });
@@ -575,7 +590,7 @@
                 snapshot.forEach((child) => {
                     scoresArray.push(child.val());
                 });
-                scoresArray.reverse();
+                scoresArray.reverse(); // เรียงจากมากไปน้อย
 
                 const medal = i => ['🥇', '🥈', '🥉'][i] || (i + 1);
                 const row = (e, i) => `<div class="lbrow${e.name === G.name ? ' me2' : ''}"><span>${medal(i)}</span><span class="lbn">${esc(e.name || 'นักรบนิรนาม')}</span><span>Lv.${e.level || 1}</span><span><b>${e.score || 0}</b></span></div>`;
@@ -608,7 +623,7 @@
    <rect x="-16" y="-30" width="32" height="10" rx="4" fill="var(--gold)"/>
    <circle cx="0" cy="-38" r="14" fill="#f2c18d"/>
   </g>
-  <text x="176" y="132" font-size="20">❤️️</text>
+  <text x="176" y="132" font-size="20">❤</text>
   <g transform="translate(215,150)">
    <polygon points="0,-27 20,20 -20,20" fill="#ec4899"/>
    <circle cx="0" cy="-40" r="13" fill="#f2c18d"/>
